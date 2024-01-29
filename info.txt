@@ -1,0 +1,7 @@
+---------------need to change---------------
+              (sun,28,jan,2024)
+1. need to add json fille and stop using evel
+2. short the code as much as i can
+3. fix password problram  --compleated
+4. study classes and objects --tommarow
+5. SQLite study it  --tommarow && not tommarow tommarow
