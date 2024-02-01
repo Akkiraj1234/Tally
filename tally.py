@@ -4,6 +4,7 @@ from datetime import datetime , timedelta
 import sys
 import time
 import getpass
+import json
 #all the function........
 def valid_strting_date_acoding_financial_year(financial_year:str,book_starting:str):
     day,month,year=datetime.strptime(financial_year,"%d-%m-%Y").day,datetime.strptime(financial_year,"%d-%m-%Y").month,datetime.strptime(financial_year,"%d-%m-%Y").year
@@ -13,19 +14,19 @@ def valid_strting_date_acoding_financial_year(financial_year:str,book_starting:s
     starting_date = datetime.strptime(book_starting, '%d-%m-%Y')
     return financial_year <= starting_date <= financial_year_end
 def number_decoding(number:str,key:str):
-    k=key.split('0')
-    w='abcdefghijklmnopqrstuvwxyz!@#$%^&*()_-+={}[]|\\:;\"\'<,>.?/~` '
-    c={w[i]:k[i]for i in range(58)}
-    c2=k[58:80]
+    k=key.split('0');k.pop(k.index(''))
+    w='abcdefghijklmnopqrstuvwxyz!@#$%^&*()_-+={}[]|\\:;\"\'<,>.?/~` 1234567890'
+    c={w[i]:k[i]for i in range(69)}
+    c2=k[69:81]
     str1=[i if not i in c2 else '53' for i in number.split('0')]
     decoded_str=''.join(next(key for key,value in c.items()if value==i) if i in c.values() else i for i in str1)
     return decoded_str
 def number_coding(string:str, key:str):
-    k=key.split('0')
+    k=key.split('0');k.pop(k.index(''))
     import random
-    w = 'abcdefghijklmnopqrstuvwxyz!@#$%^&*()_-+={}[]|\\:;\"\'<,>.?/~` '
-    c = {w[i]: k[i] for i in range(58)}
-    c2 = k[58:80]
+    w = 'abcdefghijklmnopqrstuvwxyz!@#$%^&*()_-+={}[]|\\:;\"\'<,>.?/~` 1234567890'
+    c = {w[i]: k[i] for i in range(69)}
+    c2 = k[69:81]
     encoded_str = ''.join(c[i]+'0' if i in c else i+'0' for i in string)
     str1 = ''.join(random.choice(c2)+'0' if i == '53' else i+'0' for i in encoded_str.split('0'))
     return str1
@@ -118,49 +119,60 @@ def create_company(path_of_creation:str,list_of_compname:list):
             continue
     os.mkdir(path_of_creation+"\\"+company_name) if not os.path.exists(path_of_creation+"\\"+company_name)else None
     os.mkdir(path_of_creation+'\\'+company_name+'\\company_info') if not os.path.exists(path_of_creation+'\\'+company_name+'\\company_info') else None
-    if password_yn=='y':
-        with open(path_of_creation+'\\'+company_name+'\\company_info\\po0o1psw1f','w',encoding="utf-8")as fille:
-            fille.write(str(key))
-            fille.close()
-    else :
-        pass
-    info_list1=['True' if password_yn=='y' else 'False',company_name,company_mail,company_e_mail,state,country,pin_code,telephone,mobile_num,fax,website,str(list(currency_symbols.keys())[int(cureency)-1]),str(currency_symbols[str(list(currency_symbols.keys())[int(cureency)-1])]),finacial_year,book_starting,starting_bal,password if password_yn=='y' else 'None']
-    if password_yn == 'y':
-        info_list1 = [number_coding(i, key) for i in info_list1]
-        info_list1[0] = 'True'
+    info_dir={
+        "company_info":{
+            "company_name":company_name,
+            "company_mail":company_mail,
+            "comapny_E_mail":company_e_mail,
+            "state":state,
+            "country":country,
+            "pin_code":pin_code,
+            "telephone":telephone,
+            "mobile_num":mobile_num,
+            "fax":fax,
+            "website":website,
+            "curency":str(list(currency_symbols.keys())[int(cureency)-1]),
+            "curency_syboal":str(currency_symbols[str(list(currency_symbols.keys())[int(cureency)-1])]),
+            "fincial_year":finacial_year,
+            "book_starting":book_starting,
+            "starting_bal":starting_bal,
+            "password":password if password_yn=="y" else None 
+        },
+        "dev_info":{
+            "password_y/n":True if password_yn=='y' else False,
+            "key":key if password_yn=="y" else None
+        }
+    }
+    info_dir['company_info'].update((i,number_coding(v,key))for i,v in info_dir['company_info'].items()if password_yn=='y')
+    # (info_dir['company_info'][i]=number_coding(info_dir['company_info'][i],key) for i in info_dir['company_info'].keys()) if password_yn=='y' else None
     os.mkdir(path_of_creation+'\\'+company_name+'\\company_info') if not os.path.exists(path_of_creation+'\\'+company_name+'\\company_info') else None
-    with open(path_of_creation+'\\'+company_name+'\\company_info\\info_file','w',encoding="utf-8")as fille:
-        fille.write(str(info_list1))
-        fille.close()
+    with open(path_of_creation+'\\'+company_name+'\\company_info\\info_file.json','w',encoding="utf-8")as fille:
+        json.dump(info_dir,fille,ensure_ascii=True,indent=4)
 def opening_company(name_of_company:str,main_path:str):
-    with open(main_path+'\\'+name_of_company+'\\company_info\\info_file','r',encoding='utf-8') as fille:
-        info=eval(fille.read())
-        fille.close()
-    if info[0]=='True':
-        with open(main_path+'\\'+name_of_company+'\\company_info\\po0o1psw1f','r',encoding='utf-8') as fille:
-            key=fille.read()
-            fille.close()
+    with open(main_path+'\\'+name_of_company+'\\company_info\\info_file.json','r',encoding='utf-8') as fille:
+        info_got=json.load(fille)
+    if info_got['dev_info']['password_y/n']==True:
+        key=info_got['dev_info']['key']
         for i in range(3):
             password=input("type password to opne compamy (chance-{}): ".format(str(4-i)))
-            if number_decoding(info[-1],key)==password:
+            if number_decoding(info_got['company_info']['password'],key)==password:
+                info_got['company_info'].update((k,number_decoding(v,key)) for k,v in info_got['company_info'].items())
                 break
             else:
                 sys.exit if i==3 else None
-                pass
     else:
         pass
-    info=[number_decoding(i,key) if not i=='False'or'True'or'None' else i for i in info] if info[0]=='True' else info
     os.system('cls')
-    print(colored('company info'.center(80),color='yellow')+'\n'+colored('='*80,color='yellow') + colored('\ncompany name: ',color='yellow')+'{:<{}}{}'.format(str(info[1]), 60 - 14, colored('fincial year: ',color='yellow') + str(info[13])) +
-    colored('\nCompany Email: ',color='yellow')+'{:<{}}{}'.format(str(info[3]), 60 - 15, colored('Book starting from: ',color='yellow') + str(info[14])) +
-    colored('\nstate: ',color='yellow')+'{:<{}}{}'.format(str(info[4]), 60 - 7, colored('cureency: ',color='yellow') + info[11]) +
-    colored('\nCountry: ',color='yellow')+'{:<{}}{}'.format(str(info[5]), 60 - 9, colored('currency sybol: ',color='yellow') + str(info[12])) +
-    colored('\nPin code: ',color='yellow')+'{:<{}}{}'.format(str(info[6]), 60 - 10, colored('starting balance ',color='yellow') + info[12]+info[15]) +
-    colored('\ntelephone: ',color='yellow')+'{:<{}}{}'.format(str(info[7]), 60 - 11, colored('password_T/F ',color='yellow') + info[0]) +
-    colored('\nMoblie numb: ',color='yellow')+'{:<{}}{}'.format(str(info[8]), 60 - 13, colored('    password: ',color='yellow') + str(info[16]) +
-    colored('\ncompany mail: ',color='yellow') + str(info[2])+colored('\nfax: ',color='yellow') + str(info[9]) + colored('\nwebsite: ',color='yellow') + str(info[10])))
+    print(colored('company info'.center(80),color='yellow')+'\n'+colored('='*80,color='yellow') + colored('\ncompany name: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['company_name']), 60 - 14, colored('fincial year: ',color='yellow') + str(info_got['company_info']['fincial_year'])) +
+    colored('\nCompany Email: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['comapny_E_mail']), 60 - 15, colored('Book starting from: ',color='yellow') + str(info_got['company_info']['book_starting'])) +
+    colored('\nstate: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['state']), 60 - 7, colored('cureency: ',color='yellow') + str(info_got['company_info']['country'])) +
+    colored('\nCountry: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['country']), 60 - 9, colored('currency sybol: ',color='yellow') + str(info_got['company_info']['curency_syboal'])) +
+    colored('\nPin code: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['pin_code']), 60 - 10, colored('starting balance ',color='yellow') + str(info_got['company_info']['curency_syboal'])+info_got['company_info']['starting_bal']) +
+    colored('\ntelephone: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['telephone']), 60 - 11, colored('password_T/F ',color='yellow') + str(info_got['dev_info']['password_y/n'])) +
+    colored('\nMoblie numb: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['mobile_num']), 60 - 13, colored('    password: ',color='yellow') + str(info_got['company_info']['password'])) +
+    colored('\ncompany mail: ',color='yellow') + str(info_got['company_info']['company_mail'])+colored('\nfax: ',color='yellow') + str(info_got['company_info']['fax']) + colored('\nwebsite: ',color='yellow') + str(info_got['company_info']['website']))
     print('click anything to start code')
-    mothimh=input()
+    nothimh=input()
 # main code begin from here
 state_codes = {'andaman and nicobar islands': 'AN', 'andhra pradesh': 'AP', 'arunachal pradesh': 'AR', 'assam': 'AS', 'bihar': 'BR', 'chandigarh': 'CH', 'chhattisgarh': 'CT', 'dadra and nagar haveli and daman and diu': 'DN', 'delhi': 'DL', 'goa': 'GA', 'gujarat': 'GJ', 'haryana': 'HR', 'himachal pradesh': 'HP', 'jharkhand': 'JH', 'karnataka': 'KA', 'kerala': 'KL', 'ladakh': 'LA', 'lakshadweep': 'LD', 'madhya pradesh': 'MP', 'maharashtra': 'MH', 'manipur': 'MN', 'meghalaya': 'ML', 'mizoram': 'MZ', 'nagaland': 'NL', 'odisha': 'OR', 'puducherry': 'PY', 'punjab': 'PB', 'rajasthan': 'RJ', 'sikkim': 'SK', 'tamil nadu': 'TN', 'telangana': 'TG', 'tripura': 'TR', 'uttar pradesh': 'UP', 'uttarakhand': 'UT', 'west bengal': 'WB'}
 currency_symbols = {'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': '$', 'AUD': '$', 'CHF': 'CHF', 'CNY': '¥ or 元', 'INR': '₹', 'BRL': 'R$', 'RUB': '₽', 'ZAR': 'R', 'MXN': '$', 'NZD': '$', 'SEK': 'kr'}
