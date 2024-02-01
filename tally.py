@@ -5,6 +5,7 @@ import sys
 import time
 import getpass
 import json
+import random
 #all the function........
 def valid_strting_date_acoding_financial_year(financial_year: str, book_starting: str):
     financial_date = datetime.strptime(financial_year, "%d-%m-%Y")
@@ -21,7 +22,6 @@ def number_decoding(number:str,key:str):
     return decoded_str
 def number_coding(string:str, key:str):
     k=key.split('0');k.pop(k.index(''))
-    import random
     w = 'abcdefghijklmnopqrstuvwxyz!@#$%^&*()_-+={}[]|\\:;\"\'<,>.?/~` 1234567890'
     c = {w[i]: k[i] for i in range(69)}
     c2 = k[69:81]
@@ -29,7 +29,6 @@ def number_coding(string:str, key:str):
     str1 = ''.join(random.choice(c2)+'0' if i == '53' else i+'0' for i in encoded_str.split('0'))
     return str1
 def creating_random_key():
-    import random
     numb_list = [ '11', '12', '13', '14', '15', '16', '17', '18', '19', '21', '22', '23', '24', '25', '26', '27', '28', '29', '31', '32', '33', '34', '35', '36', '37', '38', '39', '41', '42', '43', '44', '45', '46', '47', '48', '49', '51', '52', '53', '54', '55', '56', '57', '58', '59', '61', '62', '63', '64', '65', '66', '67', '68', '69', '71', '72', '73', '74', '75', '76', '77', '78', '79', '81', '82', '83', '84', '85', '86', '87', '88', '89', '91', '92', '93', '94', '95', '96', '97', '98', '99']
     random.shuffle(numb_list)
     key=''.join(n+'0' for n in numb_list)
