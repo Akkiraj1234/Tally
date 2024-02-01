@@ -1,8 +1,8 @@
-# <center>Time Log - Project Tally</center>
+# Time Log - Project Tally
+
 **time invested in it......** *started(26 jan) - end(idk when)*\
 **time-** `17 hours`\
-**by-** akki  ~  insta-[@akki_raj_._](www.akki.co)
-
+**by-** akki  ~  insta-[@akki_raj_._](https://www.instagram.com/akki_raj_._/)
 
 ## Progress Summary
 
@@ -12,14 +12,17 @@
    - **Fixed password problem** *Fixed the login issue occurring while creating a company.*
 
 ## Encountered Errors
-#### - Sun, 29 Jan 2024
+
+- ### Sun, 29 Jan 2024
+
 1. **Encryption Data Issue:**
     - Fixed magic numbers (58 to 69 and 80 to 81)
-   - Removed extra empty objects using `k.pop(k.index(''))`
+    - Removed extra empty objects using `k.pop(k.index(''))`
 
 2. **Company Creation Flow Issue:**
    - Returned `True` in `create_company` instead of `None`
    - Used `if not res: break` in line 151
 
 ## Errors haven't been resolved yet
+
 [x] nothing yet
