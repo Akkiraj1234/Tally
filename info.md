@@ -1,7 +1,7 @@
 # Time Log - Project Tally
 
 **time invested in it......** *started(26 jan) - end(idk when)*\
-**time-** `20 hours`\
+**time-** `27 hours`\
 **by-** akki  ~  insta-[@akki_raj_._](https://www.instagram.com/akki_raj_._/)
 
 ## Introduction to Tally
