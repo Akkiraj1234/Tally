@@ -64,9 +64,21 @@ try:
     import datetime
 except ImportError:
     subprocess.call(['pip3','install','datetime'])
+try:
+    import re
+except ImportError:
+    subprocess.call(['pip3','install','re'])
 #path creatation
 path_of_dir='C:\\users\\Public'
 if os.path.exists(path_of_dir+'\\'+"tally"):
     pass
 else:
     os.mkdir(path_of_dir+'\\'+"tally")
+if os.path.exists('C:\\users\\Public\\tally\\tally_dev_info'):
+    pass
+else:
+    os.mkdir('C:\\users\\Public\\tally\\tally_dev_info')
+if os.path.exists('C:\\users\\Public\\tally\\company_name'):
+    pass
+else:
+    os.mkdir('C:\\users\\Public\\tally\\company_name')
