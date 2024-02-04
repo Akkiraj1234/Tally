@@ -7,6 +7,17 @@ import getpass
 import json
 import random
 import re
+import requests
+import socket
+from forex_python.converter import CurrencyRates, RatesNotAvailableError
+#all the path____
+containin1st_dir='C:\\Users\\Public'             #C:\\users\\Public
+main_path=containin1st_dir+'\\tally'            #C:\\users\\public\\tally
+company_path=main_path+'\\company_name'         #C:\\users\\public\\tally\\company_name         <--|
+#*company_name*   ---> name_of_company ----> company_info ----> (info_file.json)                   | both inside tally
+tally_dev_path=main_path+'\\tally_dev_info'     #C:\\users\\public\\tally\\tally_dev_info       <--|
+#*tally_dev_info* ---> (status_data.json,basic_info.json),important_fille ---> (filles)
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #all the function........
 class validation_check:
     def validate_email(email):
@@ -17,16 +28,14 @@ class validation_check:
         return bool(re.match(r'^[0-9+\(\)\s-]+$', fax_number))
     def validate_website_name(website_name):
         return bool(re.match(r'^(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', website_name))
-    def validate_contry(contry_name:str):
-        countries = ['australia','newzealand','india','unitedstates','japan','nepal','pakistan','srilanka','china','southkorea','canada','mexico','switzerland','brazil','egypt','russia','france']
+    def validate_contry(contry_name:str,countries:list):
         return True if contry_name.strip().lower() in countries else False
     def date_vaidation_check(date):
         try: 
             datetime.strptime(date, '%d-%m-%Y')
             return True
         except Exception : return False
-    def validate_pincode_format(contry:str,pin_code:str):
-        pin_formats = {'australia': ['XXXX', r'\d{4}$'],'newzealand': ['XXXX', r'\d{4}$'],'india': ['XXXXXX', r'\d{6}$'],'unitedstates': ['XXXXX or XXXXX-XXXX', r'\d{5}$|\d{5}$-\d{4}$'],'japan': ['XXXXXXX', r'\d{7}$'],'nepal': ['XXXXX', r'\d{5}$'],'pakistan': ['XXXXX', r'\d{5}$'],'srilanka': ['XXXXX', r'\d{5}$'],'china': ['XXXXXX', r'\d{6}$'],'southkorea': ['XXXXX', r'\d{5}$'],'canada': ['X1X 1X1', r'[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d'],'mexico': ['XXXXX', r'\d{5}$'],'switzerland': ['XXXX', r'\d{4}$'],'brazil': ['XXXXXXXX', r'\d{8}$'],'egypt': ['XXXXX', r'\d{5}$'],'russia': ['XXXXXX', r'\d{6}$'],'france': ['XXXXX', r'\d{5}$']}
+    def validate_pincode_format(contry:str,pin_code:str,pin_formats:list):
         (re_for:=pin_formats[contry]) if contry.lower().strip() in pin_formats else (re_for:=None)
         if re_for is None: return False,'unvalid contry'
         else: return re.match(re_for[1],pin_code),re_for[0]
@@ -35,26 +44,7 @@ class validation_check:
         financial_year_end = financial_date + timedelta(days=366)
         starting_date = datetime.strptime(book_starting, '%d-%m-%Y')
         return financial_date <= starting_date <= financial_year_end
-    def validate_state(contry:str,state_name:str):
-        state_list={
-        'australia':['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory'],
-        'newzealand':['Northland', 'Auckland', 'Waikato', 'Bay of Plenty', 'Gisborne', 'Hawke\'s Bay', 'Taranaki', 'Manawatu-Whanganui', 'Wellington', 'Tasman', 'Nelson', 'Marlborough', 'West Coast', 'Canterbury', 'Otago', 'Southland', 'Chatham Islands'],
-        'india':['andaman and nicobar islands','andhra pradesh','arunachal pradesh','assam','bihar','chandigarh','chhattisgarh','dadra and nagar haveli and daman and diu','delhi','goa','gujarat','haryana','himachal pradesh','jammu and kashmir','jharkhand','karnataka','kerala','ladakh','lakshadweep','madhya pradesh','maharashtra','manipur','meghalaya','mizoram','nagaland','odisha','puducherry','punjab','rajasthan','sikkim','tamil nadu','telangana','tripura','uttar pradesh','uttarakhand','west bengal'],
-        'unitedstates':['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware','Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky','Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi','Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico','New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania','Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont','Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
-        'japan':['Aichi', 'Akita', 'Aomori', 'Chiba', 'Ehime', 'Fukui', 'Fukuoka', 'Fukushima', 'Gifu', 'Gunma', 'Hiroshima', 'Hokkaido', 'Hyogo', 'Ibaraki', 'Ishikawa', 'Iwate', 'Kagawa', 'Kagoshima', 'Kanagawa', 'Kochi', 'Kumamoto', 'Kyoto', 'Mie', 'Miyagi', 'Miyazaki', 'Nagano', 'Nagasaki', 'Nara', 'Niigata', 'Oita', 'Okayama', 'Okinawa', 'Osaka', 'Saga', 'Saitama', 'Shiga', 'Shimane', 'Shizuoka', 'Tochigi', 'Tokushima', 'Tokyo', 'Tottori', 'Toyama', 'Wakayama', 'Yamagata', 'Yamaguchi', 'Yamanashi'],
-        'nepal':['Bagmati', 'Bheri', 'Dhawalagiri', 'Gandaki', 'Janakpur', 'Karnali', 'Koshi', 'Lumbini', 'Narayani', 'Rapti', 'Sagarmatha', 'Seti'],
-        'pakistan':['Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan', 'Gilgit-Baltistan', 'Azad Jammu and Kashmir'],
-        'srilanka':['Central', 'Eastern', 'North Central', 'Northern', 'North Western', 'Sabaragamuwa', 'Southern', 'Uva', 'Western'],
-        'china':['Anhui', 'Beijing', 'Chongqing', 'Fujian', 'Gansu', 'Guangdong', 'Guangxi', 'Guizhou', 'Hainan', 'Hebei', 'Heilongjiang', 'Henan', 'Hubei', 'Hunan', 'Inner Mongolia', 'Jiangsu', 'Jiangxi', 'Jilin', 'Liaoning', 'Ningxia', 'Qinghai', 'Shaanxi', 'Shandong', 'Shanghai', 'Shanxi', 'Sichuan', 'Tianjin', 'Tibet', 'Xinjiang', 'Yunnan', 'Zhejiang', 'Hong Kong', 'Macau'],
-        'southkorea':['Seoul', 'Busan', 'Daegu', 'Incheon', 'Gwangju', 'Daejeon', 'Ulsan', 'Sejong', 'Gyeonggi', 'Gangwon', 'Chungbuk', 'Chungnam', 'Jeonbuk', 'Jeonnam', 'Gyeongbuk', 'Gyeongnam', 'Jeju'],
-        'canada':['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon'],
-        'mexico':['Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 'Coahuila', 'Colima', 'Durango', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Mexico City', 'Mexico State', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'],
-        'switzerland':['Aargau', 'Appenzell Ausserrhoden', 'Appenzell Innerrhoden', 'Basel-Landschaft', 'Basel-Stadt', 'Bern', 'Fribourg', 'Geneva', 'Glarus', 'Graubünden', 'Jura', 'Lucerne', 'Neuchâtel', 'Nidwalden', 'Obwalden', 'Schaffhausen', 'Schwyz', 'Solothurn', 'St. Gallen', 'Thurgau', 'Ticino', 'Uri', 'Valais', 'Vaud', 'Zug', 'Zurich'],
-        'brazil':['Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal', 'Espírito Santo', 'Goiás', 'Maranhão', 'Mato Grosso', 'Mato Grosso do Sul', 'Minas Gerais', 'Pará', 'Paraíba', 'Paraná', 'Pernambuco', 'Piauí', 'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia', 'Roraima', 'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins'],
-        'egypt':['Alexandria', 'Aswan', 'Asyut', 'Beheira', 'Beni Suef', 'Cairo', 'Dakahlia', 'Damietta', 'Faiyum', 'Gharbia', 'Giza', 'Ismailia', 'Kafr El Sheikh', 'Luxor', 'Matrouh', 'Minya', 'Monufia', 'New Valley', 'North Sinai', 'Port Said', 'Qalyubia', 'Qena', 'Red Sea', 'Sharqia', 'Sohag', 'South Sinai', 'Suez'],
-        'russia':['Adygea', 'Altai Krai', 'Altai Republic', 'Amur Oblast', 'Arkhangelsk Oblast', 'Astrakhan Oblast', 'Bashkortostan', 'Belgorod Oblast', 'Bryansk Oblast', 'Buryatia', 'Chechnya', 'Chelyabinsk Oblast', 'Chukotka Autonomous Okrug', 'Chuvashia', 'Crimea (Republic of Crimea)', 'Dagestan', 'Ingushetia', 'Irkutsk Oblast', 'Ivanovo Oblast', 'Jewish Autonomous Oblast', 'Kabardino-Balkaria', 'Kaliningrad Oblast', 'Kalmykia', 'Kaluga Oblast', 'Kamchatka Krai', 'Karachay-Cherkessia', 'Kemerovo Oblast', 'Khabarovsk Krai', 'Khakassia', 'Khanty-Mansi Autonomous Okrug', 'Kirov Oblast', 'Komi', 'Kostroma Oblast', 'Krasnodar Krai', 'Krasnoyarsk Krai', 'Kurgan Oblast', 'Kursk Oblast', 'Leningrad Oblast', 'Lipetsk Oblast', 'Magadan Oblast', 'Mari El', 'Mordovia', 'Moscow', 'Moscow Oblast', 'Murmansk Oblast', 'Nenets Autonomous Okrug', 'Nizhny Novgorod Oblast', 'North Ossetia-Alania', 'Novgorod Oblast', 'Novosibirsk Oblast', 'Omsk Oblast', 'Orenburg Oblast', 'Oryol Oblast', 'Penza Oblast', 'Perm Krai', 'Primorsky Krai', 'Pskov Oblast', 'Rostov Oblast', 'Ryazan Oblast', 'Saint Petersburg', 'Sakha (Yakutia)', 'Sakhalin Oblast', 'Samara Oblast', 'Saratov Oblast', 'Sevastopol', 'Smolensk Oblast', 'Stavropol Krai', 'Sverdlovsk Oblast', 'Tambov Oblast', 'Tatarstan', 'Tomsk Oblast', 'Tula Oblast', 'Tver Oblast', 'Tyumen Oblast', 'Tyva', 'Udmurtia', 'Ulyanovsk Oblast', 'Vladimir Oblast', 'Volgograd Oblast', 'Vologda Oblast', 'Voronezh Oblast', 'Yamalo-Nenets Autonomous Okrug', 'Yaroslavl Oblast', 'Zabaykalsky Krai'],
-        'france':['Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Brittany', 'Centre-Val de Loire', 'Corsica', 'Grand Est', 'Hauts-de-France', 'Île-de-France', 'Normandy', 'Nouvelle-Aquitaine', 'Occitanie', 'Pays de la Loire', 'Provence-Alpes-Côte d\'Azur', 'Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte']
-        }
+    def validate_state(contry:str,state_name:str,state_list:list):
         return True if state_name.lower().strip() in [i.lower().strip() for i in state_list[contry.lower().strip()]] else False
 def number_decoding(number:str,key:str):
     k=key.split('0');k.pop(k.index(''))
@@ -87,9 +77,18 @@ def info_show(info_got:json):
         colored('\ntelephone: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['telephone']), 60 - 11, colored('password_T/F ',color='yellow') + str(info_got['dev_info']['password_y/n'])) +
         colored('\nMoblie numb: ',color='yellow')+'{:<{}}{}'.format(str(info_got['company_info']['mobile_num']), 60 - 13, colored('    password: ',color='yellow') + str(info_got['company_info']['password'])) +
         colored('\ncompany mail: ',color='yellow') + str(info_got['company_info']['company_mail'])+colored('\nfax: ',color='yellow') + str(info_got['company_info']['fax']) + colored('\nwebsite: ',color='yellow') + str(info_got['company_info']['website']))
-def create_company(path_of_creation:str,list_of_compname:list):
+def tally_icon():
+    print(colored('|==========================|      /=========\\           |==|        |==|        \\==\\        /==/','yellow'))
+    print(colored('|===========|==|===========|     /==/     \\==\\          |==|        |==|         \\==\\      /==/','yellow'))
+    print(colored('            |==|                /==/       \\==\\         |==|        |==|          \\==\\    /==/','yellow'))
+    print(colored('            |==|               /==/         \\==\\        |==|        |==|           \\==\\  /==/','yellow'))
+    print(colored('            |==|              /=================\\       |==|        |==|            \\==\\/==/','yellow'))
+    print(colored('            |==|             /===================\\      |==|        |==|              |==|','yellow'))
+    print(colored('            |==|            /==/               \\==\\     |==|        |==|              |==|','yellow'))
+    print(colored('          ========         /==/                 \\==\\    |=======    |=======         =|==|=','yellow'))
+    print(colored('                                                                    BY AKHAND RAJ','blue'))
+def create_company(path_of_creation:str,list_of_compname:list,currency_symbols,countries_data:list,state_list_data:list,pin_formats_data:list):
     num=0#important variable
-    currency_symbols = {'EGP':'EGP','NPR':'NPR','PKR':'₨','LKR':'රු','KRW':'₩','EUR':'€','USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': '$', 'AUD': '$', 'CHF': 'CHF', 'CNY': '¥ or 元', 'INR': '₹', 'BRL': 'R$', 'RUB': '₽', 'ZAR': 'R', 'MXN': '$', 'NZD': '$', 'SEK': 'kr'}
     while True:
         os.system('cls');(print("path didn't found please run 'setup.py' !") or time.sleep(2) or sys.exit()) if not os.path.exists(path_of_creation) else None
         print(colored("company creation".center(50,'-'),'yellow')+colored("\n(you can also type 'n' to skip)".center(50),'yellow'));print('you can also close the creation of company by typing "n"') if num>=1 else None;num+=1
@@ -104,15 +103,15 @@ def create_company(path_of_creation:str,list_of_compname:list):
             else:print('unvalid company e mail');continue
         while True:#comapny counrty
             if (country:=input('country: ')).lower()=='n':print("important can't be skiped");continue
-            if validation_check.validate_contry(country): break
+            if validation_check.validate_contry(country,countries_data): break
             else:print('unvalid country name or this app is not availabe in the contry ')
         while True:#company state
             if (state:=input("state : ")).lower()=='n':print('important can\' be skiped');continue
-            if validation_check.validate_state(country,state):break
+            if validation_check.validate_state(country,state,state_list_data):break
             else:print('unvalid state or maybe typo ')
         while True: #company pin code
             if (pin_code:=input("pin code : ")).lower()=='n':print('important can\' be skiped');continue
-            re_for=validation_check.validate_pincode_format(country,pin_code)
+            re_for=validation_check.validate_pincode_format(country,pin_code,pin_formats_data)
             if re_for[0] :break
             else: print(f'unvalid format use this format{re_for[1]}')
         while True: #company telephone
@@ -158,14 +157,13 @@ def create_company(path_of_creation:str,list_of_compname:list):
         info_dir={"company_info":{"company_name":company_name,"company_mail":company_mail,"comapny_E_mail":company_e_mail,"state":state,"country":country,"pin_code":pin_code,"telephone":telephone,"mobile_num":mobile_num,"fax":fax,"website":website,"curency":str(list(currency_symbols.keys())[int(cureency)-1]),"curency_syboal":str(currency_symbols[str(list(currency_symbols.keys())[int(cureency)-1])]),"fincial_year":finacial_year,"book_starting":book_starting,"starting_bal":starting_bal,"password":password if password_yn=="y" else None },"dev_info":{"password_y/n":True if password_yn=='y' else False,"key":key if password_yn=="y" else None}}
         info_show(info_dir)
         if (respones:=input('all the inforamtion are currect? y/n ').lower().strip()) == 'y': break
-    os.mkdir(path_of_creation+"\\company_name\\"+company_name) if not os.path.exists(path_of_creation+"\\company_name\\"+company_name)else None
-    os.mkdir(path_of_creation+"\\company_name\\"+company_name+'\\company_info') if not os.path.exists(path_of_creation+"\\company_name\\"+company_name+'\\company_info') else None
+    os.mkdir(path_of_creation+"\\"+company_name) if not os.path.exists(path_of_creation+"\\"+company_name)else None
+    os.mkdir(path_of_creation+"\\"+company_name+'\\company_info') if not os.path.exists(path_of_creation+"\\"+company_name+'\\company_info') else None
     info_dir['company_info'].update((i,number_coding(v,key))for i,v in info_dir['company_info'].items()if password_yn=='y')
-    # (info_dir['company_info'][i]=number_coding(info_dir['company_info'][i],key) for i in info_dir['company_info'].keys()) if password_yn=='y' else None
-    with open(path_of_creation+"\\company_name\\"+company_name+'\\company_info\\info_file.json','w',encoding="utf-8")as fille:
+    with open(path_of_creation+"\\"+company_name+'\\company_info\\info_file.json','w',encoding="utf-8")as fille:
         json.dump(info_dir,fille,ensure_ascii=True,indent=4)
 def opening_company(name_of_company:str,main_path:str):
-    with open(main_path+'\\company_name\\'+name_of_company+'\\company_info\\info_file.json','r',encoding='utf-8') as fille:info_got=json.load(fille)
+    with open(main_path+'\\'+name_of_company+'\\company_info\\info_file.json','r',encoding='utf-8') as fille:info_got=json.load(fille)
     if info_got['dev_info']['password_y/n']==True:
         for i in range(3):
             password=input("type password to opne compamy (chance-{}): ".format(str(4-i)))
@@ -176,14 +174,76 @@ def opening_company(name_of_company:str,main_path:str):
     else:pass
     info_show(info_got)
     nothimh=input('click anything to start code ')
-#all path:------------------
-
-# main code begin from here
-state_codes = {'andaman and nicobar islands': 'AN', 'andhra pradesh': 'AP', 'arunachal pradesh': 'AR', 'assam': 'AS', 'bihar': 'BR', 'chandigarh': 'CH', 'chhattisgarh': 'CT', 'dadra and nagar haveli and daman and diu': 'DN', 'delhi': 'DL', 'goa': 'GA', 'gujarat': 'GJ', 'haryana': 'HR', 'himachal pradesh': 'HP', 'jharkhand': 'JH', 'karnataka': 'KA', 'kerala': 'KL', 'ladakh': 'LA', 'lakshadweep': 'LD', 'madhya pradesh': 'MP', 'maharashtra': 'MH', 'manipur': 'MN', 'meghalaya': 'ML', 'mizoram': 'MZ', 'nagaland': 'NL', 'odisha': 'OR', 'puducherry': 'PY', 'punjab': 'PB', 'rajasthan': 'RJ', 'sikkim': 'SK', 'tamil nadu': 'TN', 'telangana': 'TG', 'tripura': 'TR', 'uttar pradesh': 'UP', 'uttarakhand': 'UT', 'west bengal': 'WB'}
-currency_symbols = {'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': '$', 'AUD': '$', 'CHF': 'CHF', 'CNY': '¥ or 元', 'INR': '₹', 'BRL': 'R$', 'RUB': '₽', 'ZAR': 'R', 'MXN': '$', 'NZD': '$', 'SEK': 'kr'}
-path_of_dir='C:\\users\\Public'
-(print("coude not find the path try running setup.py") or time.sleep(2) or sys.exit()) if not os.path.exists(path_of_dir+'\\'+"tally") else None
-list_dir=os.listdir(path_of_dir+'\\tally\\company_name')
+def get_exchange_rate(target_currency):
+    '''always use USd as base currency and retuen exchange rate'''
+    try:
+        exchange_rate=CurrencyRates.get_rate(target_currency,"USD",date_obj=datetime.now().day())
+        return exchange_rate
+    except:
+        return None
+def convert_amount(amount, from_currency, to_currency,exchange_rates_dict):
+    if from_currency==to_currency:return amount
+    return amount* exchange_rates_dict[to_currency] / exchange_rates_dict[from_currency]
+def check_for_updates():
+    github_raw_url='https://raw.githubusercontent.com/Akkiraj1234/update_cloud/main/update_tally.json'
+    try:
+        response = requests.get(github_raw_url)
+    except:
+        return None
+    if response.status_code == 200:return json.loads(response.text)
+    else:return None
+def check_internet_connection():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(5)
+    try:
+        sock.connect(("www.google.com", 80))
+        return True
+    except socket.error:
+        return False
+    finally:
+        sock.close()
+#updating info:------------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+tally_icon()
+with open(tally_dev_path+'\\basic_info.json','r',encoding="utf-8") as file:
+    data1=json.load(file);file.close
+countries_data=data1['basic_info']['countries']
+state_list_data=data1['basic_info']['state_list']
+currency_symbols=data1['basic_info']['currency_symbols']
+pin_formats_data=data1['basic_info']['pin_formats']
+#updation check>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+with open(tally_dev_path+'\\status_data.json','r',encoding="utf-8") as file:
+    data1=json.load(file);file.close()
+print(colored('checking_for_update..',color='light_yellow'));time.sleep(1)
+data2=check_for_updates()
+if not data2==None:
+    if not data2["version"]==data1['basic_info']['version']:
+        print(colored('update found',color='yellow'))
+        data1["basic_info"]['version']=data2["version"]
+        update_list=data2['update_has_to_done_list']
+        print(colored('we cant perform the updation rn',color='blue'))
+        print(colored(data2['inisial_screen_message'],color='yellow'))
+    else:pass
+else:print(colored("Failed to fetch data for updation check internet conection",color='red'))
+#updating_info!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
+if datetime.now() < datetime.strptime(data1['basic_info']['money']['last_update'],'%Y-%m-%d %H:%M:%S.%f')+timedelta(days=1):pass
+else:
+    if check_internet_connection():
+        data1['basic_info']['money']['last_update']=str(datetime.now())
+        data1['basic_info']['money']['previous_M_V_detail_by_USA']=data1['basic_info']['money']['money_value_USA']
+        money_value=data1['basic_info']['money']['money_value_USA']
+        for key in money_value:
+            exchange_rate = get_exchange_rate(key)  # Assuming base currency is USD
+            if exchange_rate is not None:money_value[key] = exchange_rate
+        data1['basic_info']['money']['money_value_USA']=money_value
+        print(colored('updated.','yellow'))
+data1['status_info_collected']['opend']+=1
+data1['status_info_collected']['last_open_time']=str(datetime.now())
+with open(tally_dev_path+'\\status_data.json','w',encoding="utf-8") as file:
+    data1=json.dump(data1,file);file.close()
+nothing=input(colored('enter anything to continue',color='light_blue'))
+# main code begin from here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+(print("coude not find the path try running setup.py") or time.sleep(2) or sys.exit()) if not os.path.exists(company_path) else None
+list_dir=os.listdir(company_path)
 while True:
     os.system('cls');print('select the company'.center(50),'\n',"-"*50,'\n',colored("[1] create company".center(50),'yellow'),"\n",'-'*50)
     for n,i in enumerate(list_dir,start=2):print("[{}].......................{}".format(n,i))
@@ -193,11 +253,11 @@ while True:
         os.system('cls')
         if response=='1':
             print('creating a company : ')
-            res=create_company(path_of_dir+'\\'+"tally",list_dir)
+            res=create_company(company_path,list_dir,currency_symbols,countries_data,state_list_data,pin_formats_data)
             if not res: break#while creating the company if we go back by n while inpying name we don't go directly to fot insted of home screen that's why we use it
         elif int(response)>=2 and int(response)<=len(list_dir)+1:
             name_of_company=list_dir[int(response)-2]
-            opening_company(name_of_company,path_of_dir+'\\tally')
+            opening_company(name_of_company,company_path)
             break
         else:
             print('please type within givin option')
