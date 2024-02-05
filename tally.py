@@ -235,7 +235,7 @@ else:
             exchange_rate = get_exchange_rate(key)  # Assuming base currency is USD
             if exchange_rate is not None:money_value[key] = exchange_rate
         data1['basic_info']['money']['money_value_USA']=money_value
-        print(colored('updated.','yellow'))
+        print(colored('updated_the_cash.','yellow'))
 data1['status_info_collected']['opend']+=1
 data1['status_info_collected']['last_open_time']=str(datetime.now())
 with open(tally_dev_path+'\\status_data.json','w',encoding="utf-8") as file:
